@@ -7,4 +7,4 @@ def plot_data(imdb_data, rotten_tomatoes_data):
     print("IMDB Data:")
     print(imdb_data.head())
     print("\nRotten Tomatoes Data:")
-    print(rotten_tomatoes_data.head())
+    print(rotten_tomatoes_data.head()) # test from kevin branch
