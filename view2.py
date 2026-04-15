@@ -27,6 +27,7 @@ def hidden_gems(imdb, rotten_tomatoes):
     result = merged[['movie_title', 'title_year']].copy()
 
     result['imdb_score'] = merged['imdb_score']
+    result['gross'] = merged['gross']
     # Clean audience_score: remove '%' and convert to float
     result['audience_score'] = merged['audience_score'].str.replace('%', '').astype(float) / 10
 
