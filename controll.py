@@ -1,0 +1,66 @@
+from bokeh.models import RangeSlider, CustomJS
+
+
+def create_sliders_and_callback(merged_data, full_source, filtered_source):
+    """Create sliders and shared callback for filtering both plots"""
+
+    # Extract data ranges for sliders
+    year_min = int(merged_data['title_year'].min())
+    year_max = int(merged_data['title_year'].max())
+    score_min = float(merged_data['imdb_score'].min())
+    score_max = float(merged_data['imdb_score'].max())
+    gross_min = float(merged_data['gross'].min())
+    gross_max = float(merged_data['gross'].max())
+
+    # Create sliders
+    year_slider = RangeSlider(
+        start=year_min, end=year_max, value=(year_min, year_max),
+        step=1, title="Release Year Range", width=850,
+    )
+    score_slider = RangeSlider(
+        start=score_min, end=score_max, value=(score_min, score_max),
+        step=0.1, title="Mean Score Range", width=850,
+    )
+    gross_slider = RangeSlider(
+        start=gross_min, end=gross_max, value=(gross_min, gross_max),
+        step=1000000, title="Box Office Gross ($) Range", width=850, format="$0,0"
+    )
+
+    # Create shared callback
+    callback = CustomJS(
+        args=dict(full=full_source, filtered=filtered_source, year_slider=year_slider,
+                  score_slider=score_slider, gross_slider=gross_slider),
+        code="""
+            const [year_lo, year_hi] = year_slider.value;
+            const [score_lo, score_hi] = score_slider.value;
+            const [gross_lo, gross_hi] = gross_slider.value;
+
+            const full_data = full.data;
+            const new_data = {};
+            for (const key of Object.keys(full_data)) {
+                new_data[key] = [];
+            }
+
+            const years = full_data['title_year'];
+            const scores = full_data['mean_score'];
+            const grosses = full_data['gross'];
+            for (let i = 0; i < years.length; i++) {
+                if (years[i] >= year_lo && years[i] <= year_hi &&
+                    scores[i] >= score_lo && scores[i] <= score_hi &&
+                    grosses[i] >= gross_lo && grosses[i] <= gross_hi) {
+                    for (const key of Object.keys(full_data)) {
+                        new_data[key].push(full_data[key][i]);
+                    }
+                }
+            }
+
+            filtered.data = new_data;
+        """
+    )
+
+    # Attach callback to all sliders
+    year_slider.js_on_change('value', callback)
+    score_slider.js_on_change('value', callback)
+    gross_slider.js_on_change('value', callback)
+
+    return year_slider, score_slider, gross_slider

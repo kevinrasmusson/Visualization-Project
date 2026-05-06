@@ -1,10 +1,11 @@
 import pandas as pd
 from bokeh.plotting import figure, show
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import ColumnDataSource
 from view1 import plot_data
 from view2 import hidden_gems
 from bokeh.io import output_file
+from controll import create_sliders_and_callback
 
 
 def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
@@ -44,6 +45,7 @@ def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
     )
 
     result['mean_score'] = (result['imdb_score'] + result['audience_score']) / 2
+    result['genres'] = merged['genres']
     result = result.dropna(subset=['gross', 'mean_score'])
     result = result.drop_duplicates(subset=['movie_title', 'title_year'], keep='first')
 
@@ -66,12 +68,21 @@ def main():
     merged_data = prepare_merged_dataset(imdb_data, rotten_tomatoes_data)
     print(f"Merged dataset size: {len(merged_data)} movies")
 
-    # Pass merged dataset to all views
-    plot1 = plot_data(merged_data)
-    plot2 = hidden_gems(merged_data)
+    # Create full and filtered sources (shared by both plots)
+    full_source = ColumnDataSource(merged_data)
+    filtered_source = ColumnDataSource(merged_data)
 
-    # Combine layouts
-    layout = column(plot2, plot1)
+    # Create sliders and callback
+    year_slider, score_slider, gross_slider = create_sliders_and_callback(
+        merged_data, full_source, filtered_source
+    )
+
+    # Pass filtered_source to both plots
+    plot1 = plot_data(filtered_source)
+    plot2 = hidden_gems(filtered_source)
+
+    # Combine layouts with sliders on top
+    layout = column(year_slider, score_slider, gross_slider, plot2, plot1)
 
     # Save to HTML
     output_file("combined_views.html")
