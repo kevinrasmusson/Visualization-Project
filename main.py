@@ -1,6 +1,6 @@
 import pandas as pd
 from bokeh.plotting import figure, show
-from bokeh.layouts import row
+from bokeh.layouts import row, column
 from bokeh.models import ColumnDataSource, HoverTool
 from view1 import plot_data
 from view2 import hidden_gems
@@ -24,7 +24,7 @@ def main():
     plot2 = hidden_gems(imdb_data, rotten_tomatoes_data)
 
     # Combine side-by-side
-    layout = row(plot1, plot2)
+    layout = column(plot2, plot1)
 
     # Save to HTML
     output_file("combined_views.html")
