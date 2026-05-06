@@ -41,17 +41,10 @@ def hidden_gems(imdb, rotten_tomatoes):
     result = result.drop_duplicates(subset=['movie_title', 'title_year'], keep='first')
 
     # Hidden gem filter: high score + low gross
-    score_threshold = result['mean_score'].quantile(0.70)
-    gross_threshold = result['gross'].quantile(0.40)
-    hidden = result[
-        (result['mean_score'] >= score_threshold) &
-        (result['gross'] <= gross_threshold)
-    ].copy()
+    hidden = result.copy()
 
     print(f"Hidden gems found: {len(hidden)}")
 
-    year_min = int(hidden['title_year'].min())
-    year_max = int(hidden['title_year'].max())
 
     # Two sources: full data (never mutated) + filtered view (plot reads this)
     full_source = ColumnDataSource(hidden)
@@ -90,8 +83,17 @@ def hidden_gems(imdb, rotten_tomatoes):
     ])
     plot.add_tools(hover)
 
+    year_min = int(hidden['title_year'].min())
+    year_max = int(hidden['title_year'].max())
+
+    score_min = float(hidden['imdb_score'].min())
+    score_max = float(hidden['imdb_score'].max())
+
+    gross_min = float(hidden['gross'].min())
+    gross_max = float(hidden['gross'].max())
+
     # Year range slider
-    slider = RangeSlider(
+    year_slider = RangeSlider(
         start=year_min,
         end=year_max,
         value=(year_min, year_max),
@@ -100,11 +102,34 @@ def hidden_gems(imdb, rotten_tomatoes):
         width=850,
     )
 
-    # JavaScript callback: filters full_source by year range → writes to filtered_source
+    # IMDB score slider
+    score_slider = RangeSlider(
+        start=score_min,
+        end=score_max,
+        value=(score_min, score_max),
+        step=0.1,
+        title="IMDB Score Range",
+        width=850,
+    )
+
+    gross_slider = RangeSlider(
+        start=gross_min,
+        end=gross_max,
+        value=(gross_min, gross_max),
+        step=1000000,  # adjust step size as needed
+        title="Box Office Gross ($) Range",
+        width=850,
+        format="$0,0"
+    )
+
+    # JavaScript callback:
     callback = CustomJS(
-        args=dict(full=full_source, filtered=filtered_source, slider=slider),
+        args=dict(full=full_source, filtered=filtered_source, year_slider=year_slider, score_slider=score_slider,
+                  gross_slider=gross_slider),
         code="""
-            const [lo, hi] = slider.value;
+            const [year_lo, year_hi] = year_slider.value;
+            const [score_lo, score_hi] = score_slider.value;
+            const [gross_lo, gross_hi] = gross_slider.value;
 
             const full_data = full.data;
             const new_data = {};
@@ -113,8 +138,12 @@ def hidden_gems(imdb, rotten_tomatoes):
             }
 
             const years = full_data['title_year'];
+            const scores = full_data['imdb_score'];
+            const grosses = full_data['gross'];
             for (let i = 0; i < years.length; i++) {
-                if (years[i] >= lo && years[i] <= hi) {
+                if (years[i] >= year_lo && years[i] <= year_hi &&
+                    scores[i] >= score_lo && scores[i] <= score_hi &&
+                    grosses[i] >= gross_lo && grosses[i] <= gross_hi) {
                     for (const key of Object.keys(full_data)) {
                         new_data[key].push(full_data[key][i]);
                     }
@@ -125,9 +154,11 @@ def hidden_gems(imdb, rotten_tomatoes):
         """
     )
 
-    slider.js_on_change('value', callback)
+    year_slider.js_on_change('value', callback)
+    score_slider.js_on_change('value', callback)
+    gross_slider.js_on_change('value', callback)
 
     output_file("hidden_gems.html")
-    show(column(slider, plot))
+    show(column(year_slider, score_slider, gross_slider, plot))
 
     return hidden
