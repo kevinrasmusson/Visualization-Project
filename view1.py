@@ -1,35 +1,13 @@
-from bokeh.plotting import figure, show
+from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, HoverTool
 
-
-def plot_data(imdb_data, rotten_tomatoes_data):
-    imdb = imdb_data.copy()
-    rt = rotten_tomatoes_data.copy()
-
-    # Clean titles for matching
-    imdb["title_clean"] = imdb["movie_title"].astype(str).str.strip().str.lower()
-    rt["title_clean"] = rt["title"].astype(str).str.strip().str.lower()
-
-    # Convert Rotten Tomatoes audience score from "75%" to 75.0
-    rt["audience_score_percent"] = (
-        rt["audience_score"]
-        .astype(str)
-        .str.replace("%", "", regex=False)
-    )
-
-    rt["audience_score_percent"] = rt["audience_score_percent"].astype(float)
-
-    # Normalize RT audience score from 0–100 to 0–10
-    rt["audience_score_normalized"] = rt["audience_score_percent"] / 10
-
-    # Merge datasets by movie title
-    merged = imdb.merge(rt, on="title_clean", how="inner")
-
+def plot_data(merged_data):
+    """Plot IMDB Score vs Rotten Tomatoes Audience Score from merged dataset"""
     source = ColumnDataSource(data=dict(
-        movie_title=merged["movie_title"],
-        imdb_score=merged["imdb_score"],
-        rt_audience_score=merged["audience_score_normalized"],
-        rt_audience_percent=merged["audience_score_percent"],
+        movie_title=merged_data["movie_title"],
+        imdb_score=merged_data["imdb_score"],
+        rt_audience_score=merged_data["audience_score"],
+        rt_audience_percent=merged_data["audience_score"] * 10,
     ))
 
     p = figure(
@@ -53,11 +31,9 @@ def plot_data(imdb_data, rotten_tomatoes_data):
     hover = HoverTool(tooltips=[
         ("Movie", "@movie_title"),
         ("IMDB Score", "@imdb_score"),
-        ("RT Audience", "@rt_audience_percent%"),
+        ("RT Audience", "@rt_audience_percent{0.0}%"),
         ("RT Normalized", "@rt_audience_score"),
     ])
 
     p.add_tools(hover)
-
-    #show(p)
     return p

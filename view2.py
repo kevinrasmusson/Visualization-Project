@@ -1,54 +1,14 @@
-import pandas as pd
 from bokeh.plotting import figure
 from bokeh.layouts import column
-from bokeh.models import ColumnDataSource, HoverTool, RangeSlider, CustomJS
+from bokeh.models import ColumnDataSource, HoverTool, RangeSlider, CustomJS, NumeralTickFormatter
 
-def hidden_gems(imdb, rotten_tomatoes):
-    print("Hidden Gems in movies:")
-
-    # Clean and normalize titles
-    imdb['movie_title'] = imdb['movie_title'].str.strip().str.lower()
-    rotten_tomatoes['title'] = rotten_tomatoes['title'].str.strip().str.lower()
-
-    # Convert years to same type
-    imdb['title_year'] = imdb['title_year'].astype(int)
-    rotten_tomatoes['release_date'] = rotten_tomatoes['release_date'].astype(int)
-
-    # Merge datasets
-    merged = pd.merge(
-        imdb,
-        rotten_tomatoes,
-        left_on=['movie_title', 'title_year'],
-        right_on=['title', 'release_date'],
-        how='inner'
-    )
-
-    result = merged[['movie_title', 'title_year']].copy()
-    result['imdb_score'] = merged['imdb_score']
-
-    # Clean gross
-    result['gross'] = pd.to_numeric(
-        merged['gross'].astype(str).str.replace(',', ''), errors='coerce'
-    )
-
-    # Clean audience_score
-    result['audience_score'] = (
-        merged['audience_score'].str.replace('%', '').astype(float) / 10
-    )
-
-    result['mean_score'] = (result['imdb_score'] + result['audience_score']) / 2
-    result = result.dropna(subset=['gross', 'mean_score'])
-    result = result.drop_duplicates(subset=['movie_title', 'title_year'], keep='first')
-
-    # Hidden gem filter: high score + low gross
-    hidden = result.copy()
-
-    print(f"Hidden gems found: {len(hidden)}")
-
+def hidden_gems(merged_data):
+    """Create Hidden Gems visualization from merged dataset"""
+    print(f"Hidden gems found: {len(merged_data)}")
 
     # Two sources: full data (never mutated) + filtered view (plot reads this)
-    full_source = ColumnDataSource(hidden)
-    filtered_source = ColumnDataSource(hidden)  # starts as full, slider updates it
+    full_source = ColumnDataSource(merged_data)
+    filtered_source = ColumnDataSource(merged_data)
 
     # Plot
     plot = figure(
@@ -70,9 +30,6 @@ def hidden_gems(imdb, rotten_tomatoes):
         line_width=0.5,
     )
 
-    from bokeh.models import NumeralTickFormatter
-
-    # After creating the plot, add this before plot.add_tools(hover):
     plot.yaxis.formatter = NumeralTickFormatter(format="$0,0")
 
     hover = HoverTool(tooltips=[
@@ -83,49 +40,31 @@ def hidden_gems(imdb, rotten_tomatoes):
     ])
     plot.add_tools(hover)
 
-    year_min = int(hidden['title_year'].min())
-    year_max = int(hidden['title_year'].max())
+    year_min = int(merged_data['title_year'].min())
+    year_max = int(merged_data['title_year'].max())
+    score_min = float(merged_data['imdb_score'].min())
+    score_max = float(merged_data['imdb_score'].max())
+    gross_min = float(merged_data['gross'].min())
+    gross_max = float(merged_data['gross'].max())
 
-    score_min = float(hidden['imdb_score'].min())
-    score_max = float(hidden['imdb_score'].max())
-
-    gross_min = float(hidden['gross'].min())
-    gross_max = float(hidden['gross'].max())
-
-    # Year range slider
+    # Sliders
     year_slider = RangeSlider(
-        start=year_min,
-        end=year_max,
-        value=(year_min, year_max),
-        step=1,
-        title="Release Year Range",
-        width=850,
+        start=year_min, end=year_max, value=(year_min, year_max),
+        step=1, title="Release Year Range", width=850,
     )
-
-    # IMDB score slider
     score_slider = RangeSlider(
-        start=score_min,
-        end=score_max,
-        value=(score_min, score_max),
-        step=0.1,
-        title="IMDB Score Range",
-        width=850,
+        start=score_min, end=score_max, value=(score_min, score_max),
+        step=0.1, title="IMDB Score Range", width=850,
     )
-
     gross_slider = RangeSlider(
-        start=gross_min,
-        end=gross_max,
-        value=(gross_min, gross_max),
-        step=1000000,  # adjust step size as needed
-        title="Box Office Gross ($) Range",
-        width=850,
-        format="$0,0"
+        start=gross_min, end=gross_max, value=(gross_min, gross_max),
+        step=1000000, title="Box Office Gross ($) Range", width=850, format="$0,0"
     )
 
-    # JavaScript callback:
+    # JavaScript callback
     callback = CustomJS(
-        args=dict(full=full_source, filtered=filtered_source, year_slider=year_slider, score_slider=score_slider,
-                  gross_slider=gross_slider),
+        args=dict(full=full_source, filtered=filtered_source, year_slider=year_slider,
+                  score_slider=score_slider, gross_slider=gross_slider),
         code="""
             const [year_lo, year_hi] = year_slider.value;
             const [score_lo, score_hi] = score_slider.value;
@@ -158,8 +97,4 @@ def hidden_gems(imdb, rotten_tomatoes):
     score_slider.js_on_change('value', callback)
     gross_slider.js_on_change('value', callback)
 
-    #output_file("hidden_gems.html")
-    #show(column(year_slider, score_slider, gross_slider, plot))
-
     return column(year_slider, score_slider, gross_slider, plot)
-    #return hidden
