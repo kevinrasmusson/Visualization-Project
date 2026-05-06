@@ -1,5 +1,5 @@
 import pandas as pd
-from bokeh.plotting import figure, show, output_file
+from bokeh.plotting import figure
 from bokeh.layouts import column
 from bokeh.models import ColumnDataSource, HoverTool, RangeSlider, CustomJS
 
@@ -158,7 +158,8 @@ def hidden_gems(imdb, rotten_tomatoes):
     score_slider.js_on_change('value', callback)
     gross_slider.js_on_change('value', callback)
 
-    output_file("hidden_gems.html")
-    show(column(year_slider, score_slider, gross_slider, plot))
+    #output_file("hidden_gems.html")
+    #show(column(year_slider, score_slider, gross_slider, plot))
 
-    return hidden
+    return column(year_slider, score_slider, gross_slider, plot)
+    #return hidden

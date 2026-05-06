@@ -4,6 +4,7 @@ from bokeh.layouts import row
 from bokeh.models import ColumnDataSource, HoverTool
 from view1 import plot_data
 from view2 import hidden_gems
+from bokeh.io import output_file
 
 def main():
     imdb_data = pd.read_csv("imdb_movie_metadata.csv")
@@ -18,8 +19,16 @@ def main():
     imdb_data = imdb_data.drop_duplicates()
     rotten_tomatoes_data = rotten_tomatoes_data.drop_duplicates()
 
-    #plot_data(imdb_data, rotten_tomatoes_data)
-    hidden_gems(imdb_data, rotten_tomatoes_data)
+    # Get plots from both views
+    plot1 = plot_data(imdb_data, rotten_tomatoes_data)
+    plot2 = hidden_gems(imdb_data, rotten_tomatoes_data)
+
+    # Combine side-by-side
+    layout = row(plot1, plot2)
+
+    # Save to HTML
+    output_file("combined_views.html")
+    show(layout)
 
 if __name__ == "__main__":
     main()

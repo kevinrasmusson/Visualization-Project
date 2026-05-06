@@ -59,4 +59,5 @@ def plot_data(imdb_data, rotten_tomatoes_data):
 
     p.add_tools(hover)
 
-    show(p)
+    #show(p)
+    return p
