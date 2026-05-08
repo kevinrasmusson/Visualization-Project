@@ -4,6 +4,7 @@ from bokeh.layouts import column
 from bokeh.models import ColumnDataSource, HoverTool
 from view1 import plot_data
 from view2 import hidden_gems
+from view3 import discovery_heatmap
 from bokeh.io import output_file
 
 
@@ -69,9 +70,10 @@ def main():
     # Pass merged dataset to all views
     plot1 = plot_data(merged_data)
     plot2 = hidden_gems(merged_data)
+    plot3 = discovery_heatmap(merged_data)
 
     # Combine layouts
-    layout = column(plot2, plot1)
+    layout = column(plot2, plot1, plot3)
 
     # Save to HTML
     output_file("combined_views.html")
