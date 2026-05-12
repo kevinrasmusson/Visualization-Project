@@ -8,8 +8,9 @@ def plot_data(filtered_source):
         x_axis_label="IMDB Score, 0–10",
         y_axis_label="Rotten Tomatoes Audience Score, normalized to 0–10",
         tools="pan,wheel_zoom,box_zoom,box_select,lasso_select,reset",
-        width=800,
-        height=500,
+        width=710,
+        height=405,
+        toolbar_location="above",  # Hide toolbar on this plot
     )
 
     p.scatter(
