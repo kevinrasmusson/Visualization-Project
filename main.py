@@ -1,11 +1,12 @@
 import pandas as pd
-from bokeh.plotting import figure, show
-from bokeh.layouts import column
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.plotting import show
+from bokeh.layouts import column, row
+from bokeh.models import ColumnDataSource, Spacer
 from view1 import plot_data
 from view2 import hidden_gems
 from view3 import discovery_heatmap
 from bokeh.io import output_file
+from controll import create_sliders_and_callback
 
 
 def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
@@ -34,6 +35,15 @@ def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
     result = merged[['movie_title', 'title_year']].copy()
     result['imdb_score'] = merged['imdb_score']
 
+    # Extract relevant columns
+    result = merged[['movie_title', 'title_year']].copy()
+    result['imdb_score'] = merged['imdb_score']
+
+    # ADD THESE TWO LINES:
+    result['num_critic_of_reviews'] = merged[
+        'num_critic_for_reviews']  # or 'num_critic_of_reviews' if that's the exact column name
+    result['num_voted_users'] = merged['num_voted_users']
+
     # Clean gross
     result['gross'] = pd.to_numeric(
         merged['gross'].astype(str).str.replace(',', ''), errors='coerce'
@@ -45,6 +55,7 @@ def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
     )
 
     result['mean_score'] = (result['imdb_score'] + result['audience_score']) / 2
+    result['genres'] = merged['genres']
     result = result.dropna(subset=['gross', 'mean_score'])
     result = result.drop_duplicates(subset=['movie_title', 'title_year'], keep='first')
 
