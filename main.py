@@ -4,6 +4,7 @@ from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource, Spacer
 from view1 import plot_data
 from view2 import hidden_gems
+from view3 import discovery_heatmap
 from bokeh.io import output_file
 from controll import create_sliders_and_callback
 
@@ -77,27 +78,13 @@ def main():
     merged_data = prepare_merged_dataset(imdb_data, rotten_tomatoes_data)
     print(f"Merged dataset size: {len(merged_data)} movies")
 
-    # Create full and filtered sources (shared by both plots)
-    full_source = ColumnDataSource(merged_data)
-    filtered_source = ColumnDataSource(merged_data)
+    # Pass merged dataset to all views
+    plot1 = plot_data(merged_data)
+    plot2 = hidden_gems(merged_data)
+    plot3 = discovery_heatmap(merged_data)
 
-    # In the main() function, update:
-    year_slider, score_slider, gross_slider, genre_select = create_sliders_and_callback(
-        merged_data, full_source, filtered_source
-    )
-
-    # Pass filtered_source to both plots
-    plot1 = plot_data(filtered_source)
-    plot2 = hidden_gems(filtered_source)
-
-    # Create 2x2 grid layout for controls with padding
-    spacer_h = Spacer(width=250)  # Adjust width value as needed (in pixels)
-    controls_row1 = row(year_slider, spacer_h, score_slider)
-    controls_row2 = row(gross_slider, spacer_h, genre_select)
-    controls_grid = column(controls_row1, controls_row2)
-    view_lay = row(plot1, plot2)
-    # Combine grid with plots below
-    layout = column(controls_grid, view_lay)
+    # Combine layouts
+    layout = column(plot2, plot1, plot3)
 
     # Save to HTML
     output_file("combined_views.html")
