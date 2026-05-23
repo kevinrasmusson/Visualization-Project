@@ -140,25 +140,36 @@ def main():
     )
 
     header = Div(text="""
+    <style>
+      .bk-clearfix {
+        width: 100% !important;
+      }
+    </style>
     <div style="
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        margin-top: -8px;
+        width: 100vw;
         font-family: Arial, sans-serif;
         background: #1f2937;
         color: white;
         padding: 18px 24px;
-        border-radius: 12px;
         margin-bottom: 12px;
+        text-align: center;
+        box-sizing: border-box;
     ">
         <h1 style="margin: 0; font-size: 28px;">Movie Hidden Gems Dashboard</h1>
-
         <p style="margin: 6px 0 0 0; color: #d1d5db; font-size: 14px;">
             Explore overlooked movies using scores, box office gross, critic-review count, genre, and release decade.
         </p>
-
         <p style="margin: 6px 0 0 0; color: #d1d5db; font-size: 13px;">
             Use the filters to narrow movies by year, score, gross revenue, and genre. Hover over charts for details.
         </p>
     </div>
-    """)
+    """, sizing_mode="stretch_width")
 
     filter_title = Div(text="""
     <div style="
@@ -170,21 +181,34 @@ def main():
         Filters
     </div>
     """)
-    controls = column(
-        filter_title,
+
+    left_controls = column(
         year_slider,
         score_slider,
+        width=500
+    )
+
+    right_controls = column(
         gross_slider,
         genre_select,
-        width=600
+        width=500
     )
+
+    controls = column(
+        #filter_title,
+        row(Spacer(width=650), filter_title, Spacer(width=650)),
+        row(Spacer(width=150), left_controls, Spacer(width=50), right_controls),
+        width=1500
+    )
+
     layout = column(
         header,
         controls,
         Spacer(height=20),
         row(plot2, plot1),
         Spacer(height=25),
-        row(plot3, plot4)
+        row(plot3, plot4),
+        sizing_mode="stretch_width"
     )
 
     output_file("combined_views.html")
