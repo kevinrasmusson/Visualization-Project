@@ -5,8 +5,11 @@ from bokeh.models import ColumnDataSource, Spacer
 from view1 import plot_data
 from view2 import hidden_gems
 from view3 import discovery_heatmap
+from view4 import genre_hidden_gems
 from bokeh.io import output_file
 from controll import create_sliders_and_callback
+from bokeh.models import ColumnDataSource, Spacer, Div
+
 
 
 def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
@@ -54,6 +57,7 @@ def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
     result = result.dropna(subset=[
         'gross',
         'mean_score',
+        'num_critic_of_reviews',
         'num_voted_users',
         'genres'
     ])
@@ -64,7 +68,37 @@ def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
     )
 
     return result
+def add_critic_review_colors(data):
+    """Add fixed color groups based on critic review count quartiles."""
+    data = data.copy()
 
+    color_palette = ['#e74c3c', '#f39c12', '#3498db', '#2ecc71']
+
+    labels = [
+        'Few critic reviews',
+        'Some critic reviews',
+        'Many critic reviews',
+        'Most critic reviews'
+    ]
+
+    critic_group = pd.qcut(
+        data['num_critic_of_reviews'],
+        q=4,
+        labels=False,
+        duplicates='drop'
+    )
+
+    data['colors'] = [
+        color_palette[int(group)] if pd.notna(group) else '#cccccc'
+        for group in critic_group
+    ]
+
+    data['critic_review_group'] = [
+        labels[int(group)] if pd.notna(group) else 'Unknown'
+        for group in critic_group
+    ]
+
+    return data
 
 def main():
     imdb_data = pd.read_csv("imdb_movie_metadata.csv")
@@ -82,6 +116,8 @@ def main():
     rotten_tomatoes_data = rotten_tomatoes_data.drop_duplicates()
 
     merged_data = prepare_merged_dataset(imdb_data, rotten_tomatoes_data)
+    merged_data = add_critic_review_colors(merged_data)
+
     print(f"Merged dataset size: {len(merged_data)} movies")
 
     # Full unchanged dataset for callbacks
@@ -91,31 +127,64 @@ def main():
     filtered_source = ColumnDataSource(merged_data)
 
     plot1 = plot_data(filtered_source)
+
     plot2 = hidden_gems(filtered_source)
 
     # This heatmap is currently static because it uses the DataFrame directly
     plot3 = discovery_heatmap(merged_data)
-
+    plot4 = genre_hidden_gems(merged_data)
     year_slider, score_slider, gross_slider, genre_select = create_sliders_and_callback(
         merged_data,
         source,
         filtered_source
     )
 
+    header = Div(text="""
+    <div style="
+        font-family: Arial, sans-serif;
+        background: #1f2937;
+        color: white;
+        padding: 18px 24px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    ">
+        <h1 style="margin: 0; font-size: 28px;">Movie Hidden Gems Dashboard</h1>
+
+        <p style="margin: 6px 0 0 0; color: #d1d5db; font-size: 14px;">
+            Explore overlooked movies using scores, box office gross, critic-review count, genre, and release decade.
+        </p>
+
+        <p style="margin: 6px 0 0 0; color: #d1d5db; font-size: 13px;">
+            Use the filters to narrow movies by year, score, gross revenue, and genre. Hover over charts for details.
+        </p>
+    </div>
+    """)
+
+    filter_title = Div(text="""
+    <div style="
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 4px;
+    ">
+        Filters
+    </div>
+    """)
     controls = column(
+        filter_title,
         year_slider,
         score_slider,
         gross_slider,
         genre_select,
         width=600
     )
-
     layout = column(
+        header,
         controls,
         Spacer(height=20),
-        plot2,
-        plot1,
-        plot3
+        row(plot2, plot1),
+        Spacer(height=25),
+        row(plot3, plot4)
     )
 
     output_file("combined_views.html")

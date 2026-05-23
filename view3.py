@@ -47,14 +47,14 @@ def discovery_heatmap(merged_data):
     )
 
     p = figure(
-        title="Where Are Hidden Gems Most Likely to Be Found?",
+        title="Hidden Gem Regions: Average Score by Decade and Gross Level",
         x_range=decades,
         y_range=gross_categories,
-        width=850,
-        height=450,
+        width=620,
+        height=390,
         x_axis_label="Release decade",
         y_axis_label="Box office gross category",
-        tools="pan,wheel_zoom,box_zoom,reset",
+        tools="pan,wheel_zoom,reset,hover",
     )
 
     p.rect(
@@ -86,7 +86,7 @@ def discovery_heatmap(merged_data):
     )
 
     p.add_layout(color_bar, "right")
-
+    p.background_fill_color = "#eeeeee"
     p.xaxis.major_label_orientation = 0.8
     p.ygrid.grid_line_color = None
     p.xgrid.grid_line_color = None

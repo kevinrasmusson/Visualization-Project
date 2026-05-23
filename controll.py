@@ -55,9 +55,7 @@ def create_sliders_and_callback(merged_data, full_source, filtered_source):
             const full_data = full.data;
             const new_data = {};
             for (const key of Object.keys(full_data)) {
-                if (key !== 'colors') {
-                    new_data[key] = [];
-                }
+                new_data[key] = [];
             }
 
             const years = full_data['title_year'];
@@ -81,18 +79,12 @@ def create_sliders_and_callback(merged_data, full_source, filtered_source):
 
                 if (year_match && score_match && gross_match && genre_match) {
                     for (const key of Object.keys(full_data)) {
-                        if (key !== 'colors') {
-                            new_data[key].push(full_data[key][i]);
-                        }
+                        new_data[key].push(full_data[key][i]);
                     }
                 }
             }
 
-            // Regenerate colors after filtering
-            if ('num_voted_users' in new_data) {
-                const color_palette = ['#e74c3c', '#f39c12', '#3498db', '#2ecc71'];
-                new_data['colors'] = new_data['num_voted_users'].map(v => color_palette[Math.floor(Math.random() * 4)]);
-            }
+            
 
             filtered.data = new_data;
         """
