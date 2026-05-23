@@ -22,7 +22,6 @@ def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
     imdb['title_year'] = imdb['title_year'].astype(int)
     rt['release_date'] = rt['release_date'].astype(int)
 
-    # Merge datasets
     merged = pd.merge(
         imdb,
         rt,
@@ -31,33 +30,38 @@ def prepare_merged_dataset(imdb_data, rotten_tomatoes_data):
         how='inner'
     )
 
-    # Extract relevant columns
     result = merged[['movie_title', 'title_year']].copy()
     result['imdb_score'] = merged['imdb_score']
 
-    # Extract relevant columns
-    result = merged[['movie_title', 'title_year']].copy()
-    result['imdb_score'] = merged['imdb_score']
-
-    # ADD THESE TWO LINES:
-    result['num_critic_of_reviews'] = merged[
-        'num_critic_for_reviews']  # or 'num_critic_of_reviews' if that's the exact column name
+    result['num_critic_of_reviews'] = merged['num_critic_for_reviews']
     result['num_voted_users'] = merged['num_voted_users']
 
-    # Clean gross
     result['gross'] = pd.to_numeric(
-        merged['gross'].astype(str).str.replace(',', ''), errors='coerce'
+        merged['gross'].astype(str).str.replace(',', ''),
+        errors='coerce'
     )
 
-    # Clean audience_score
     result['audience_score'] = (
-            merged['audience_score'].str.replace('%', '').astype(float) / 10
+        merged['audience_score'].str.replace('%', '').astype(float) / 10
     )
 
-    result['mean_score'] = (result['imdb_score'] + result['audience_score']) / 2
+    result['mean_score'] = (
+        result['imdb_score'] + result['audience_score']
+    ) / 2
+
     result['genres'] = merged['genres']
-    result = result.dropna(subset=['gross', 'mean_score'])
-    result = result.drop_duplicates(subset=['movie_title', 'title_year'], keep='first')
+
+    result = result.dropna(subset=[
+        'gross',
+        'mean_score',
+        'num_voted_users',
+        'genres'
+    ])
+
+    result = result.drop_duplicates(
+        subset=['movie_title', 'title_year'],
+        keep='first'
+    )
 
     return result
 
@@ -67,6 +71,7 @@ def main():
     rotten_tomatoes_data = pd.read_csv("movie_info.csv")
 
     imdb_data = imdb_data.dropna()
+
     rotten_tomatoes_data['release_date'] = pd.to_numeric(
         rotten_tomatoes_data['release_date'].astype(str).str[-4:],
         errors='coerce'
@@ -79,20 +84,43 @@ def main():
     merged_data = prepare_merged_dataset(imdb_data, rotten_tomatoes_data)
     print(f"Merged dataset size: {len(merged_data)} movies")
 
-    # Create shared Bokeh source
+    # Full unchanged dataset for callbacks
     source = ColumnDataSource(merged_data)
 
-    # Pass source to views that use Bokeh glyphs
-    plot1 = plot_data(source)
-    plot2 = hidden_gems(source)
+    # Filtered dataset used by linked plots
+    filtered_source = ColumnDataSource(merged_data)
 
-    # Heatmap currently expects a DataFrame, so keep merged_data there
+    plot1 = plot_data(filtered_source)
+    plot2 = hidden_gems(filtered_source)
+
+    # This heatmap is currently static because it uses the DataFrame directly
     plot3 = discovery_heatmap(merged_data)
 
-    layout = column(plot2, plot1, plot3)
+    year_slider, score_slider, gross_slider, genre_select = create_sliders_and_callback(
+        merged_data,
+        source,
+        filtered_source
+    )
+
+    controls = column(
+        year_slider,
+        score_slider,
+        gross_slider,
+        genre_select,
+        width=600
+    )
+
+    layout = column(
+        controls,
+        Spacer(height=20),
+        plot2,
+        plot1,
+        plot3
+    )
 
     output_file("combined_views.html")
     show(layout)
+
 
 if __name__ == "__main__":
     main()
