@@ -66,30 +66,33 @@ def main():
     imdb_data = pd.read_csv("imdb_movie_metadata.csv")
     rotten_tomatoes_data = pd.read_csv("movie_info.csv")
 
-    # Remove rows with missing values and duplicates
     imdb_data = imdb_data.dropna()
-    rotten_tomatoes_data['release_date'] = pd.to_numeric(rotten_tomatoes_data['release_date'].astype(str).str[-4:],
-                                                         errors='coerce').astype('Int64')
+    rotten_tomatoes_data['release_date'] = pd.to_numeric(
+        rotten_tomatoes_data['release_date'].astype(str).str[-4:],
+        errors='coerce'
+    ).astype('Int64')
+
     rotten_tomatoes_data = rotten_tomatoes_data.dropna()
     imdb_data = imdb_data.drop_duplicates()
     rotten_tomatoes_data = rotten_tomatoes_data.drop_duplicates()
 
-    # Create main dataset once
     merged_data = prepare_merged_dataset(imdb_data, rotten_tomatoes_data)
     print(f"Merged dataset size: {len(merged_data)} movies")
 
-    # Pass merged dataset to all views
-    plot1 = plot_data(merged_data)
-    plot2 = hidden_gems(merged_data)
+    # Create shared Bokeh source
+    source = ColumnDataSource(merged_data)
+
+    # Pass source to views that use Bokeh glyphs
+    plot1 = plot_data(source)
+    plot2 = hidden_gems(source)
+
+    # Heatmap currently expects a DataFrame, so keep merged_data there
     plot3 = discovery_heatmap(merged_data)
 
-    # Combine layouts
     layout = column(plot2, plot1, plot3)
 
-    # Save to HTML
     output_file("combined_views.html")
     show(layout)
-
 
 if __name__ == "__main__":
     main()
