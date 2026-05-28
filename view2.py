@@ -5,9 +5,6 @@ def hidden_gems(filtered_source):
     """Create Hidden Gems visualization from filtered dataset"""
     print(f"Hidden gems plot created for filtered data")
 
-    
-
-
     # Plot
     plot = figure(
         title="Hidden Gems: High Score, Low Gross",
