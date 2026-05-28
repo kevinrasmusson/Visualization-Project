@@ -10,10 +10,10 @@ def discovery_heatmap(merged_data):
 
     data = merged_data.copy()
 
-    # Create decade column
+    # decade column
     data["decade"] = (data["title_year"] // 10 * 10).astype(int).astype(str) + "s"
 
-    # Create gross categories
+    # gross categories
     data["gross_category"] = pd.qcut(
         data["gross"],
         q=4,
