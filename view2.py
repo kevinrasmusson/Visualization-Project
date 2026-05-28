@@ -5,7 +5,7 @@ def hidden_gems(filtered_source):
     """Create Hidden Gems visualization from filtered dataset"""
     print(f"Hidden gems plot created for filtered data")
 
-    # Create 4 popularity groups based on num_critic_of_reviews
+    
 
 
     # Plot
